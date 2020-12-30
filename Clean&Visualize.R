@@ -77,23 +77,24 @@ MatC = Mat %>%
   rename(., G3 = G3.comp)
 
 
-
 #################################################
 ##  Descriptive Statistics and Visualizations  ##
 #################################################
 library(ggplot2)
 library(gridExtra)
 
+# Histogram of course scores
 G3por = ggplot(Por, aes(G3)) + geom_histogram(fill="turquoise4",color="black") + 
   ggtitle("Final Portuguese Scores, n=649") + ylim(c(0,110)) + xlab("Score") +
   theme_classic()
 G3mat = ggplot(Mat, aes(G3)) + geom_histogram(fill="goldenrod3",color="black") +
   ggtitle("Final Math Scores, n=395") + ylim(c(0,110)) + xlab("Score") + 
   theme_classic()
-# Plot of distribution of scores
+
+# plotted into grid form
 grid.arrange(G3por,G3mat, ncol=2) + ggtitle("Distribution of Final Scores")
 
-# Bar charts for categorical Gs
+# Bar charts for categorical scores
 G3Cpor = ggplot(PorC, aes(G3)) + geom_bar(fill="turquoise4") +
   ggtitle("Final Portuguese Scores, n=649") + ylim(c(0,600)) + xlab("Competitiveness") +
   theme_classic()
@@ -108,7 +109,9 @@ G3Bmat = ggplot(MatB, aes(G3)) + geom_bar(fill="goldenrod3") +
   ggtitle("Final Math Scores, n=395") + ylim(c(0,600)) + xlab("Pass/Fail") +
   theme_classic()
 
+
 grid.arrange(G3Bpor,G3Cpor, G3Bmat, G3Cmat, ncol=2) + ggtitle("Distribution of Final Scores")
+
 
 ## Summary information output as text file
 out = capture.output(summary(Por))
@@ -118,4 +121,21 @@ cat("Portuguese Descriptive Summary", out, sep = "\n", append = T,
 out = capture.output(summary(Mat))
 cat("Math Descriptive Summary", out, sep = "\n", append = T,
     file = "MatSum.txt")
+
+# Some simple plots of relationships between final grade G3 and other variables
+fac.vars = c()
+vars = subset(Por, select = -G3) %>% names(.)
+
+qwkplt = function(vars, y, data) {
+  pdf(file="plots.pdf", width = 5, height = 5) # output to pdf
+  d = substitute(data) # calls the name of the dataset as string
+  for (i in vars) {
+    plot(data[[y]] ~ data[[i]], data = data, xlab = i, ylab = y,
+         main = paste0(y, " by ", i, " in (", d, ") dataset")) # paste0() is no separation
+  }
+  dev.off() # ends pdf
+}
+
+qwkplt(vars, y=c("G3"), data=Por)
+qwkplt(vars, y=c("G3"), data = Mat)
 
