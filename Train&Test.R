@@ -28,11 +28,23 @@ test.split = function(data, y, train.per) {
 # Use these variables for desired datasets for train test and validation
 set.seed(8)
 Por.val = val.split(Por, c("G3"), .5, .5) # train validate test datasets
-Mat.val = val.split(Por, c("G3"), .5, .5) 
+PorB.val = val.split(PorB, c("G3"), .5, .5)
+PorC.val = val.split(PorC, c("G3"), .5, .5)
+
+Mat.val = val.split(Mat, c("G3"), .5, .5) 
+MatB.val = val.split(MatB, c("G3"), .5, .5) 
+MatC.val = val.split(MatC, c("G3"), .5, .5) 
+
 
 set.seed(8)
 Por.tst = test.split(Por, c("G3"), .5) # train test datasets
-Mat.tst = test.split(Por, c("G3"), .5)
+PorB.tst = test.split(PorB, c("G3"), .5)
+PorC.tst = test.split(PorC, c("G3"), .5)
+
+Mat.tst = test.split(Mat, c("G3"), .5)
+MatB.tst = test.split(MatB, c("G3"), .5)
+MatC.tst = test.split(MatC, c("G3"), .5)
+
 
 
 
