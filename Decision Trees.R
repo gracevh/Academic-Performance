@@ -3,156 +3,138 @@
 ##############################################
 library(tree)
 library(magrittr)
+reg.tree = function(tree, val, val.y, test, test.y, class = F, prune = NULL) {
+  if (!class) {
+    pred = predict(tree, newdata = val)
+    val.error = mean((pred - val.y)^2)
+    print(paste("Initial Validation Error:", val.error))
+  } else {
+    pred = predict(tree, newdata = val, type = "class")
+    t = table(pred, unlist(val.y))
+    val.error = 1 - mean(pred.y == unlist(val.y))
+    print("Confusion Matrix:")
+    print(t)
+    print(paste("Initial Validation Error:", val.error))
+  }
+  
+  plot(cv.tree(tree)$size, cv.tree(tree)$dev, type = "b") # graph to visualize trend in deviance
+    
+  if (is.null(prune)) {
+      cv.tree = cv.tree(tree)
+      min = which.min(cv.tree$dev)
+      best.size = cv.tree$size[min]
+      prune.tree = prune.tree(tree, best = best.size) # put in best to prune the tree
+      print(paste("Prune best size:", best.size))
+  } else {
+      prune.tree = prune.tree(tree, best = prune) # put in best to prune the tree
+  }
+  
+  if (!class) {
+    prune.y = predict(prune.tree, newdata = val)
+    prun.error = mean((prune.y - val.y)^2) 
+    print(paste("Pruned Validation Error:", prun.error))
+  } else {
+    prune.y = predict(prune.tree, newdata = val, type = "class")
+    t = table(prune.y, unlist(val.y))
+    val.error = 1 - mean(prune.y == unlist(val.y))
+    print("Confusion Matrix:")
+    print(t)
+    print(paste("Pruned Validation Error:", val.error))
+  }
+}
 
 ## Portuguese ##
+# Decision Tree regression
+# Train & Validation
 set.seed(10)
-p.tree = tree(G3 ~ ., data = Por.val$train)
-plot(p.tree) # tree plot
-text(p.tree) # text corresponding to tree
+tree = tree(G3 ~ ., data = Por.val$train)
+reg.tree(tree = tree, val = Por.val$val, val.y = unlist(Por.val$val.y))
 
-pred.y = predict(p.tree, newdata = Por.val$val)
-mean((pred.y - unlist(Por.val$val.y))^2) # must unlist the y responses
+# Test
+set.seed(10)
+pred.y = Por.val$train %>% 
+            tree(G3 ~ ., .) %>% 
+            prune.tree(., best = 7) %>%
+            predict(., newdata = Por.val$test) 
 
-p.tree %>% 
-  cv.tree(.) %$% 
-  size[which.min(dev)] # index the deviance for the best size of tree based on minimum deviance score
-
-plot(cv.tree(p.tree)$size, cv.tree(p.tree)$dev, type = "l") # graph to visualize trend in deviance
-
-prune.ptree = prune.tree(p.tree, best = 7) # put in best to prune the tree
-plot(prune.ptree)
-text(prune.ptree, pretty = 0)
-
-prune.y = predict(prune.ptree, newdata = Por.val$val)
-mean((prune.y - unlist(Por.val$val.y))^2) # must unlist the y responses
-# Refer to graphed values to pick better tree size; recall bias-variance tradeoff
-
-# Final test on pruned tree
-pred.y = predict(prune.ptree, newdata = Por.val$test)
 mean((pred.y - unlist(Por.val$test.y))^2)
+
 
 # For categorical testing
 # Binary Pass/Fail
 set.seed(10)
-p.tree = tree(G3 ~ ., data = PorB.val$train)
-plot(p.tree)
-text(p.tree)
+tree = tree(G3 ~ ., data = balanced.PorB)
+reg.tree(tree = tree, val = PorB.val$val, val.y = unlist(PorB.val$val.y), class = T)
 
-pred.y = predict(p.tree, newdata = PorB.val$val, type = "class")
-1 - mean(pred.y == unlist(PorB.val$val.y))
+# Test
+set.seed(10)
+pred.y = balanced.PorB %>% 
+  tree(G3 ~ ., .) %>% 
+  prune.tree(., best = 3) %>%
+  predict(., newdata = Por.val$test, type = "class") 
 
-p.tree %>% 
-  cv.tree(.) %$% 
-  size[which.min(dev)] # index the deviance for the best size of tree based on minimum deviance score
-
-plot(cv.tree(p.tree)$size, cv.tree(p.tree)$dev, type = "l") # graph to visualize trend in deviance
-
-prune.ptree = prune.tree(p.tree, best = 4) 
-prune.y = predict(prune.ptree, newdata = PorB.val$val, type = "class")
-1 - mean(prune.y == unlist(PorB.val$val.y))
-# Refer to graphed values to pick better tree size; recall bias-variance tradeoff
-
-# Final test
-pred.y = predict(prune.ptree, newdata = PorB.val$test, type = "class")
 1 - mean(pred.y == unlist(PorB.val$test.y))
+t = table(pred.y, unlist(PorB.val$test.y)) ; t
+# Specificity to Failing/Non-competitive students (the underrepresented class)
+# Specificity = True/(True + False)
+t[1,1]/colSums(t)[1] # for minority class
+t[2,2]/colSums(t)[2] # for majority class
 
 # Competitive comp/noncomp
 set.seed(10)
-p.tree = tree(G3 ~ ., data = PorC.val$train)
-plot(p.tree)
-text(p.tree)
+tree = tree(G3 ~ ., data = balanced.PorB)
+reg.tree(tree = tree, val = PorB.val$val, val.y = unlist(PorB.val$val.y), class = T)
 
-pred.y = predict(p.tree, newdata = PorC.val$val, type = "class")
-1 - mean(pred.y == unlist(PorC.val$val.y))
+# Test
+set.seed(10)
+pred.y = balanced.PorB %>% 
+  tree(G3 ~ ., .) %>% 
+  prune.tree(., best = 4) %>%
+  predict(., newdata = Por.val$test, type = "class") 
 
-p.tree %>% 
-  cv.tree(.) %$% 
-  size[which.min(dev)] # index the deviance for the best size of tree based on minimum deviance score
-
-plot(cv.tree(p.tree)$size, cv.tree(p.tree)$dev, type = "l") # graph to visualize trend in deviance
-
-prune.ptree = prune.tree(p.tree, best = 4) 
-prune.y = predict(prune.ptree, newdata = PorC.val$val, type = "class")
-1 - mean(prune.y == unlist(PorC.val$val.y))
-# Refer to graphed values to pick better tree size; recall bias-variance tradeoff
-
-# Final test
-pred.y = predict(prune.ptree, newdata = PorC.val$test, type = "class")
-1 - mean(pred.y == unlist(PorC.val$test.y))
-
+1 - mean(pred.y == unlist(PorB.val$test.y))
 
 ## Math ##
+# Decision Tree regression
+# Train & Validation
 set.seed(10)
-p.tree = tree(G3 ~ ., data = Mat.val$train)
-plot(p.tree) # tree plot
-text(p.tree) # text corresponding to tree
+tree = tree(G3 ~ ., data = Mat.val$train) 
+reg.tree(tree = tree, val = Mat.val$val, val.y = unlist(Mat.val$val.y))
 
-pred.y = predict(p.tree, newdata = Mat.val$val)
-mean((pred.y - unlist(Mat.val$val.y))^2) # must unlist the y responses
+# Test
+set.seed(10)
+pred.y = Mat.val$train %>% 
+  tree(G3 ~ ., .) %>% 
+  prune.tree(., best = 7) %>%
+  predict(., newdata = Mat.val$test) 
 
-p.tree %>% 
-  cv.tree(.) %$% 
-  size[which.min(dev)] # index the deviance for the best size of tree based on minimum deviance score
-
-plot(cv.tree(p.tree)$size, cv.tree(p.tree)$dev, type = "l") # graph to visualize trend in deviance
-
-prune.ptree = prune.tree(p.tree, best = 8) # put in best to prune the tree
-plot(prune.ptree)
-text(prune.ptree, pretty = 0)
-
-prune.y = predict(prune.ptree, newdata = Mat.val$val)
-mean((prune.y - unlist(Mat.val$val.y))^2) # must unlist the y responses
-# Refer to graphed values to pick better tree size; recall bias-variance tradeoff
-
-# Final test
-pred.y = predict(prune.ptree, newdata = Mat.val$test)
 mean((pred.y - unlist(Mat.val$test.y))^2)
 
 # For categorical testing
 # Binary Pass/Fail
 set.seed(10)
-p.tree = tree(G3 ~ ., data = MatB.val$train)
-plot(p.tree)
-text(p.tree)
+tree = tree(G3 ~ ., data = balanced.PorB)
+reg.tree(tree = tree, val = PorB.val$val, val.y = unlist(PorB.val$val.y), class = T)
 
-pred.y = predict(p.tree, newdata = MatB.val$val, type = "class")
-1 - mean(pred.y == unlist(MatB.val$val.y)) 
+# Test
+set.seed(10)
+pred.y = balanced.PorB %>% 
+  tree(G3 ~ ., .) %>% 
+  prune.tree(., best = 4) %>%
+  predict(., newdata = Por.val$test, type = "class") 
 
-p.tree %>% 
-  cv.tree(.) %$% 
-  size[which.min(dev)] # index the deviance for the best size of tree based on minimum deviance score
-
-plot(cv.tree(p.tree)$size, cv.tree(p.tree)$dev, type = "l") # graph to visualize trend in deviance
-
-prune.ptree = prune.tree(p.tree, best = 4) 
-prune.y = predict(prune.ptree, newdata = MatB.val$val, type = "class")
-1 - mean(prune.y == unlist(MatB.val$val.y))
-# Refer to graphed values to pick better tree size; recall bias-variance tradeoff
-
-# Final test
-pred.y = predict(prune.ptree, newdata = MatB.val$test, type = "class")
-1 - mean(pred.y == unlist(MatB.val$test.y))
+1 - mean(pred.y == unlist(PorB.val$test.y))
 
 # Competitive comp/noncomp
 set.seed(10)
-p.tree = tree(G3 ~ ., data = MatC.val$train)
-plot(p.tree)
-text(p.tree)
+tree = tree(G3 ~ ., data = balanced.PorB)
+reg.tree(tree = tree, val = PorB.val$val, val.y = unlist(PorB.val$val.y), class = T)
 
-pred.y = predict(p.tree, newdata = MatC.val$val, type = "class")
-1 - mean(pred.y == unlist(MatC.val$val.y)) 
+# Test
+set.seed(10)
+pred.y = balanced.PorB %>% 
+  tree(G3 ~ ., .) %>% 
+  prune.tree(., best = 4) %>%
+  predict(., newdata = Por.val$test, type = "class") 
 
-p.tree %>% 
-  cv.tree(.) %$% 
-  size[which.min(dev)] # index the deviance for the best size of tree based on minimum deviance score
-
-plot(cv.tree(p.tree)$size, cv.tree(p.tree)$dev, type = "l") # graph to visualize trend in deviance
-
-prune.ptree = prune.tree(p.tree, best = 3) 
-prune.y = predict(prune.ptree, newdata = MatC.val$val, type = "class")
-1 - mean(prune.y == unlist(MatC.val$val.y))
-# Refer to graphed values to pick better tree size; recall bias-variance tradeoff
-
-# Final test
-pred.y = predict(prune.ptree, newdata = MatC.val$test, type = "class")
-1 - mean(pred.y == unlist(MatC.val$test.y))
+1 - mean(pred.y == unlist(PorB.val$test.y))

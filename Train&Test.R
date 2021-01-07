@@ -30,33 +30,36 @@ set.seed(8)
 Por.val = val.split(Por, c("G3"), .5, .5) # train validate test datasets
 PorB.val = val.split(PorB, c("G3"), .5, .5)
 PorC.val = val.split(PorC, c("G3"), .5, .5)
-# ratio of classes
-table(PorB.val$train$G3) 
-table(PorC.val$train$G3)
 
 Mat.val = val.split(Mat, c("G3"), .5, .5) 
 MatB.val = val.split(MatB, c("G3"), .5, .5) 
 MatC.val = val.split(MatC, c("G3"), .5, .5) 
-# ratio of classes
-table(MatB.val$train$G3)
-table(MatC.val$train$G3)
 
 
 set.seed(8)
 Por.tst = test.split(Por, c("G3"), .5) # train test datasets
 PorB.tst = test.split(PorB, c("G3"), .5)
 PorC.tst = test.split(PorC, c("G3"), .5)
-# ratio of classes
-table(PorB.tst$train$G3) 
-table(PorC.tst$train$G3)
 
 Mat.tst = test.split(Mat, c("G3"), .5)
 MatB.tst = test.split(MatB, c("G3"), .5)
 MatC.tst = test.split(MatC, c("G3"), .5)
-# ratio of classes
-table(MatB.tst$train$G3)
-table(MatC.tst$train$G3)
 
+# Synthetic Minority Over-Sampling Technique
+# perc.over adds minority samples; perc.under removes majority samples; k is nearest neighbors generation
 
+# Balanced Test train datasets
+balanced.PorBt = SMOTE(G3 ~ ., data = as.data.frame(PorB.tst$train), perc.over = 100, k = 5, perc.under = 100)
+balanced.PorCt = SMOTE(G3 ~ ., data = as.data.frame(PorC.tst$train), perc.over = 100, k = 5, perc.under = 100)
+
+balanced.MatBt = SMOTE(G3 ~ ., data = as.data.frame(MatB.tst$train), perc.over = 100, k = 5, perc.under = 100)
+balanced.MatCt = SMOTE(G3 ~ ., data = as.data.frame(MatC.tst$train), perc.over = 100, k = 5, perc.under = 100)
+
+# Balanced Validation train datasets
+balanced.PorB = SMOTE(G3 ~ ., data = as.data.frame(PorB.val$train), perc.over = 100, k = 5, perc.under = 100)
+balanced.PorB = SMOTE(G3 ~ ., data = as.data.frame(PorC.val$train), perc.over = 100, k = 5, perc.under = 100)
+
+balanced.MatB = SMOTE(G3 ~ ., data = as.data.frame(MatB.val$train), perc.over = 100, k = 5, perc.under = 100)
+balanced.MatC = SMOTE(G3 ~ ., data = as.data.frame(MatC.val$train), perc.over = 100, k = 5, perc.under = 100)
 
 
