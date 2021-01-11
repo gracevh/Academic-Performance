@@ -17,11 +17,10 @@ num.vars = c("age", "absences", "G1", "G2", "G3")
 # convert non-numerics to factor variables
 # Once converted to factor, a variable with type integer will respond FALSE to boolean is.integer
 # Must isolate those variables before factor conversion
-
 # convert the numeric factor variables to ordered factors
 Por = Por %>% 
-  select(!num.vars) %>% 
-  select(where(is.numeric)) %>%
+  dplyr::select(!num.vars) %>% 
+  dplyr::select(where(is.numeric)) %>%
   colnames %>% 
   Por[, .] %>% 
   lapply(., ordered) %>%
@@ -30,8 +29,8 @@ Por = Por %>%
   
 
 Mat = Mat %>% 
-  select(!num.vars) %>% 
-  select(where(is.numeric)) %>%
+  dplyr::select(!num.vars) %>% 
+  dplyr::select(where(is.numeric)) %>%
   colnames %>% 
   Mat[, .] %>% 
   lapply(., ordered) %>%
