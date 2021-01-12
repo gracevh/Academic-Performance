@@ -2,8 +2,6 @@ Por = read.csv("student-por.csv", sep = ";")
 Mat = read.csv("student-mat.csv", sep = ";")
 
 library(tidyverse)
-library(tidyr)
-library(dplyr)
 Por = Por %>% as_tibble()
 Mat = Mat %>% as_tibble()
 
