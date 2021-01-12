@@ -1,7 +1,6 @@
 source("Train&Test.R")
-library(magrittr)
-library(dplyr)
 library(DMwR) # SMOTE
+library(magrittr) # to use %$%
 
 #############################################
 ##  Unorder and Reorder Factors for SMOTE  ##
@@ -20,9 +19,13 @@ unorder = function(data) {
 }
 
 # This function will reorder the numeric factor variables that should be ordered
-re.order = function(data) {
+# SMOTE destroys factor variables and turns all variables to numeric type integers or doubles
+
+ord.list = Por %>% select(where(is.ordered)) %>% names() # first obtain list of original ordered factors
+
+re.order = function(data, list.vars) {
   numeric.vars = data %>% Filter(is.numeric, .) %>% names()
-  
+
   data %>%
     dplyr::select(!numeric.vars) %>% 
     dplyr::select(where(is.numeric)) %>%
@@ -33,22 +36,33 @@ re.order = function(data) {
     mutate(data, .) 
 }
 
-tmp = balanced.MBT
-numeric.vars = balanced.MBT %>% Filter(is.numeric, .) %>% names()
+tmp = balanced.PBT
+numeric.vars = balanced.PBT %>% Filter(is.numeric, .) %>% names()
+class(balanced.PBT)
+class(balanced.PBT$age)
+is.string(balanced.PBT$sex)
+typeof(balanced.PBT$G1)
 
-balanced.MBT %>% as.data.frame() %>%
+tmp2 = balanced.PBT %>% as_tibble() 
+
+categorical = tmp %>%
   dplyr::select(!numeric.vars) %>% 
-  dplyr::select(where(is_integer)) %>%
-  colnames %>% 
-  tmp[, .] %>% 
-  lapply(., ordered) %>%
-  as_tibble(.) %>%
-  mutate(tmp, .) 
-
-is_integer(balanced.MBT$Medu) & length(balanced.MBT$Medu) < 2
+  transform(., 2, as.factor) %>% # use mighty transform() to coerce them back to factors
+  as_tibble(.) 
 
 
+# solution plus rose function below
+otr[,numeric.vars] = round(otr[, numeric.vars])
+otr[, numeric.vars] = apply(otr[, numeric.vars], 2, as.integer)
+otr[, ord.list] = lapply(otr[, ord.list], ordered)
 
+
+
+
+
+
+
+n = as.numeric(levels(balanced.PBT$Medu)[balanced.PBT$Medu])
 
 # Synthetic Minority Over-Sampling Technique
 # perc.over adds minority samples; perc.under removes majority samples; k is nearest neighbors generation
@@ -62,6 +76,7 @@ is_integer(balanced.MBT$Medu) & length(balanced.MBT$Medu) < 2
 
 # PorB test set
 temp = unorder(PorB.tst$train)
+otr = ROSE(G3 ~ ., data = as.data.frame(temp), seed = 230)$data %>% as_tibble()
 # To parameterize sample size
   SMOTE(G3 ~ ., data = as.data.frame(temp), perc.over = 100, k = 5, perc.under = 400) %$%
   table(G3)
